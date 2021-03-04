@@ -6,6 +6,7 @@ An open source planning software (in C). Meant for tracking progress on whatever
 
 ## In Progress Features
 - Add course codes (6 charcters), Tasks, and Individual Goals
+- Save plans to text file and load upon reopening program
 
 ## Planned Additions
 - Auto deletion of tasks after due date passes
