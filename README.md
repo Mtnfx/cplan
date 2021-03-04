@@ -9,3 +9,7 @@ An open source planning software (in C). Meant for tracking progress on whatever
 
 ##Planned Additions
 - Auto deletion of tasks after due date passes
+
+
+I also have a discord for development of this software.
+Server ID: 817102641032593470
