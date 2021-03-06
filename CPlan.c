@@ -3,6 +3,8 @@ Project Name: CPlan
 
 Language: C
 
+Author: Alec "Mtnfx" Larsen
+
 Description:
 When complete, program should allow for entry, cleaning, and modification of goals.
 */
