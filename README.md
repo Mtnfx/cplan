@@ -2,7 +2,8 @@
 An open source planning software (in C). Meant for tracking progress on whatever high school and university assignments you have outgoing.
 
 ## Currently Implemented Features:
-
+- Reads plan file and brings all data into program
+- Prints summary of plan brokken down by course, task, and goal.
 
 ## In Progress Features
 - Add course codes (6 charcters), Tasks, and Individual Goals
