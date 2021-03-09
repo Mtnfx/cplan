@@ -3,8 +3,6 @@ Project Name: CPlan
 
 Language: C
 
-Author: Alec "Mtnfx" Larsen
-
 Description:
 When complete, program should allow for entry, cleaning, and modification of goals.
 */
@@ -111,22 +109,35 @@ void PrintSummary (Course *head){
 	struct Course *body = head;
 	int completed;
 	int total;
+	int w;
+	int c;
+	float pct;
 	while (body != NULL){
-		total = TotalTaskWeight(body->head);
-		completed = TotalTaskCompleted(body->head);
-		printf("%s: (%d/%d)",body->name,completed,total);
-		struct Task *tbody = body->head;
-		while (tbody != NULL){
-			total = TotalGoalWeight(tbody->GoalHead);
-			completed = TotalGoalCompleted(tbody->GoalHead);
-			printf("  %s: (%d/%d)",tbody->TaskName,completed,total);
-			struct Goal *gbody = tbody->GoalHead;
-			while (gbody != NULL){
-				printf("    %s: (%d/%d)",gbody->GoalName, gbody->goal_weight, gbody->weight_completed);
-				gbody = gbody->next;
-			}
-			tbody = tbody->next;
-		}
+	    w = TotalTaskWeight(body->head);
+	    c = TotalTaskCompleted(body->head);
+	    pct = (float)c/(float)w * 100;
+        printf("%s\n", body->name);
+        printf("%d/%d (%.2f%%)\n", c, w, pct);
+        
+        struct Task *tbody = body->head;
+        while (tbody != NULL){
+            w = TotalGoalWeight(tbody->GoalHead);
+	        c = TotalGoalCompleted(tbody->GoalHead);
+	        pct = (float)c/(float)w * 100;
+            printf("  %s\n", tbody->TaskName);
+            printf("  %d/%d (%.2f%%)\n", c, w, pct);
+            
+            struct Goal *gbody = tbody->GoalHead;
+            while (gbody != NULL){
+                w = gbody->goal_weight;
+	            c = gbody->weight_completed;
+	            pct = (float)c/(float)w * 100;
+                printf("    %s\n", gbody->GoalName);
+                printf("    %d/%d (%.2f%%)\n", c, w, pct);
+                gbody = gbody->next;
+            }
+            tbody = tbody->next;
+        }
 		body = body->next;
 	}
 	return;
@@ -134,122 +145,190 @@ void PrintSummary (Course *head){
 
 //------------------------------------------------------------------------------
 
-Goal *form_goal(char str[max_name_length]){
+Goal *form_goal(char str[max_name_length], Goal *ghead, int *g){
 	//Split str into 3 variables and form goal object.
 	char name[max_name_length];
-	char tmp[5];
+	char *tmp;
 	int weight;
 	int complete;
 	struct Goal *body = NULL; 
-	int i;
 	body=(Goal*)calloc(1,sizeof(Goal));
-	for(i = 0; strcmp(&str[i+1], ",") != 0; i++){
-	}
-	strncpy(name, str, i);
-	i += 2;
-	while (str[i] != ','){
-		strcat(tmp, &str[i]);
-		i++;
-	}
+	tmp = strtok(str, ",");
+	//printf("Goal Name: %s",tmp);
+	strcpy(body->GoalName, tmp);
+	
+	tmp = strtok(NULL, ",");
 	weight = atoi(tmp);
-	strcpy(tmp, "\0\0\0\0\0");
-	while (str[i] != '\0'){
-		strcat(tmp, &str[i]);
-		i++;
-	}
+	tmp = strtok(NULL, ",");
 	complete = atoi(tmp);
-	strcpy(body->GoalName, name);
 	body->goal_weight = weight;
 	body->weight_completed = complete;
-	return body;
+	
+	if(*g == 0){
+	    printf("Goal Head Set to: %s - (Weight = %d, Completed = %d)\n",body->GoalName, body->goal_weight, body->weight_completed);
+	    *g = 1;
+	    return body;
+	}
+	while (ghead->next != NULL){
+	    ghead = ghead->next;
+	}
+	ghead->next = body;
+	printf("Goal Added: %s\n",body->GoalName);
+	return ghead;
 }
 
 //------------------------------------------------------------------------------
 
-Course *parseData(){
-	//Take previous run data from last session and input into program. Return
-	//pointer to first course in plan as the start of a linked list.
-	FILE *path;
-	char str[max_name_length];
+Node *createNode (char str[max_name_length], Node *nhead){
+    struct Node *n;
+    n =(Node*)calloc(1,sizeof(Node));
+    strcpy(n->str, str);
+    if(strcmp(nhead->str, "NULL") == 0){
+        printf("Head set to: %s",n->str);
+        return n;
+    }
+    struct Node *body = nhead;
+    while(body->next != NULL){
+        body = body->next;
+    }
+    printf("Node Added: %s",n->str);
+    body->next = n;
+    return nhead;
+}
+
+//------------------------------------------------------------------------------
+
+Task *createTaskNode (char str[max_name_length], Task *thead, Goal *gHead, int *t){
+    struct Task *n;
+    n =(Task*)calloc(1,sizeof(Task));
+    strncpy(n->TaskName, str, strlen(str) - 1);
+    n->GoalHead = gHead;
+    if(*t == 0){
+        printf("Head of Tasks Set To: %s\n",n->TaskName);
+        *t = 1;
+        return n;
+    }
+    struct Task *body = thead;
+    while (body->next != NULL){
+      body = body->next;
+    }
+    printf("Task Added: %s\n",n->TaskName);
+    body->next = n;
+    return thead;
+}
+
+//------------------------------------------------------------------------------
+
+Course *createCourseNode (char str[max_name_length], Course *head, Task *tHead){
+    struct Course *n;
+    n =(Course*)calloc(1,sizeof(Course));
+    strncpy(n->name, str, strlen(str) - 1);
+    n->head = tHead;
+    if(strcmp(head->name,"NULL") == 0){
+        printf("Head of Courses Set To: %s\n",n->name);
+        return n;
+    }
+    struct Course *body = head;
+    while (body->next != NULL){
+        body = body->next;
+    }
+    printf("Course Added: %s\n",n->name);
+    body->next = n;
+    return head;
+}
+
+//------------------------------------------------------------------------------
+
+Node *ExtractData(){
+    char str[max_name_length];
+    struct Node *nhead = NULL;
+    FILE *path;
     char filename[10] = "plan.txt";
-	int len = 0;
-	int g = 0;
-	int t = 0;
-	struct Node *prev = NULL;
-	struct Node *current = NULL;
-	struct Node *nhead = NULL;
-	struct Course *head = NULL;
-	struct Task *tHead = NULL;
-	struct Goal *gHead = NULL;	
-	struct Course *cprev = NULL;
-	struct Task *tprev = NULL;
-	struct Goal *gprev = NULL;
-	struct Course *course = NULL;
-	struct Task *task = NULL;
-	struct Goal *goal = NULL;
-	
+    
     path = fopen(filename, "r");
     if (path == NULL){
-        printf("Plan file not found. Put plan.txt in working directory");
+        printf("Plan file not found. Put plan.txt in working directory\n");
     }
 	
+	nhead =(Node*)calloc(1,sizeof(Node));
+	strcpy(nhead->str,"NULL");
+	
+	// This loop should initialize all lines of the file plan.txt into a linked list.
     while (fgets(str, max_name_length, path) != NULL){
-        strcpy(current->str, str);
-		prev->next = current;
-		prev = current;
-		if (len == 1){
-			nhead = prev;
-		}
-		len++;
+        nhead = createNode(str, nhead);
 	}
 	
-	current = nhead;
-	len = 0;
-	
+	struct Node *current = nhead;
 	while (current != NULL){
-		strcpy(course->name, current->str);
-		while (current->str[0] == 'T'){
-			strcpy(task->TaskName,current->str);
-			while(current->str[0] == 'G'){
-				goal = form_goal(current->str);
-				gprev->next = goal;
-				if(g == 1){
-					gHead = gprev;
-				}
-				gprev = goal;
-				current = current->next;
-				g++;				
-			}
-			task->GoalHead = gHead;
-			tprev->next = task;
-			if (t == 1){
-				tHead = tprev;
-			}
-			tprev = task;
-			t++;
-			current = current->next;
-		}
-		course->head = tHead;
-		cprev->next = course;
-		if (len == 1){
-			head = course;
-		}
-		cprev = course;
-		len++;
-		current = current->next;
+	    printf("%s",current->str);
+	    current = current->next;
 	}
-
-    fclose(path);
-	return head;
+	return nhead;
 }
 
 //------------------------------------------------------------------------------
 
 int main(){
-	printf("Bruh.");
-	struct Course *head = parseData();
-	printf("%s",head->name);
+    /*--------------------------------------------------------------------------
+    This entire section brings all data in plan into the program. Note that for
+    this program to run without modifying code, plan.txt must exist in your
+    working directory.
+    --------------------------------------------------------------------------*/
+    char last_node;
+    int t = 0;
+    int g = 0;
+	struct Node *nhead = NULL;
+	struct Course *head = NULL;
+	struct Task *tHead = NULL;
+	struct Goal *gHead = NULL;
+	char course_name[max_name_length];
+    char task_name[max_name_length];
+    
+    nhead =(Node*)calloc(1,sizeof(Node));
+    head =(Course*)calloc(1,sizeof(Course));
+    tHead =(Task*)calloc(1,sizeof(Task));
+    gHead =(Goal*)calloc(1,sizeof(Goal));
+
+    nhead = ExtractData();
+    
+    strcpy(head->name,"NULL");
+	// This loop hopefully initializes the three tiered linked list correctly.
+	while (nhead != NULL){
+	    if (nhead->str[0] == 'C'){
+	        if (last_node == 'G'){
+	           tHead = createTaskNode(task_name, tHead, gHead, &t);
+	           g = 0;
+	           head = createCourseNode(course_name, head, tHead);
+	           t = 0;
+	        }
+	        last_node = 'C';
+	        strcpy(course_name, nhead->str);
+	    }
+		if (nhead->str[0] == 'T'){
+		    if (last_node == 'G'){
+		        tHead = createTaskNode(task_name, tHead, gHead, &t);
+		        g = 0;
+		    }
+		    strcpy(task_name, nhead->str);
+		}
+		if(nhead->str[0] == 'G'){
+		    gHead = form_goal(nhead->str, gHead, &g);
+			last_node = 'G';
+		}
+	    nhead = nhead->next;
+	}
+	tHead = createTaskNode(task_name, tHead, gHead, &t);
+	head = createCourseNode(course_name, head, tHead);
+	
+	/*--------------------------------------------------------------------------
+	This section actually does stuff with the data. PrintSummary is here as a
+	start.
+	--------------------------------------------------------------------------*/
+	//Prints the current plan alongside all % completions of each course/task/goal
 	PrintSummary(head);
+	
 	return 0;
 }
 // All functions in this code run without compiler error.
+// List should Init Correctly
+// List should print all % completions alongside course/task/goal names.
