@@ -3,6 +3,8 @@ Project Name: CPlan
 
 Language: C
 
+Author: Alec "MountainFox" Larsen
+
 Description:
 When complete, program should allow for entry, cleaning, and modification of goals.
 */
@@ -47,6 +49,9 @@ typedef struct Goal{
 //------------------------------------------------------------------------------
 
 int TotalGoalWeight (Goal *head){
+    /*--------------------------------------------------------------------------
+    Calculate the total weight of all goals in the given goal list.
+    --------------------------------------------------------------------------*/
 	struct Goal *body = head;
 	int total = 0;
 	while(body != NULL){
@@ -59,6 +64,9 @@ int TotalGoalWeight (Goal *head){
 //------------------------------------------------------------------------------
 
 int TotalTaskWeight (Task *head){
+    /*--------------------------------------------------------------------------
+    Calculate the total weight of all tasks in the given task list.
+    --------------------------------------------------------------------------*/
 	struct Task *body = head;
 	int total = 0;
 	while(body != NULL){
@@ -71,6 +79,9 @@ int TotalTaskWeight (Task *head){
 //------------------------------------------------------------------------------
 
 int TotalGoalCompleted (Goal *head){
+    /*--------------------------------------------------------------------------
+    Calculate the total weight completed of all goals in the given goal list.
+    --------------------------------------------------------------------------*/
 	struct Goal *body = head;
 	int total = 0;
 	while(body != NULL){
@@ -83,6 +94,9 @@ int TotalGoalCompleted (Goal *head){
 //------------------------------------------------------------------------------
 
 int TotalTaskCompleted (Task *head){
+    /*--------------------------------------------------------------------------
+    Calculate the total weight completed of all tasks in the given task list.
+    --------------------------------------------------------------------------*/
 	struct Task *body = head;
 	int total = 0;
 	while(body != NULL){
@@ -95,6 +109,10 @@ int TotalTaskCompleted (Task *head){
 //------------------------------------------------------------------------------
 
 void AppendGoal (Task *task, Goal *goal){
+    /*--------------------------------------------------------------------------
+    Append the goal specified to the end of the task list specified by head
+    Task.
+    --------------------------------------------------------------------------*/
 	struct Goal *body = task->GoalHead;
 	while(body->next != NULL){
 		body = body->next;
@@ -106,6 +124,10 @@ void AppendGoal (Task *task, Goal *goal){
 //------------------------------------------------------------------------------
 
 void PrintSummary (Course *head){
+    /*--------------------------------------------------------------------------
+    Print the hierarchal list of all courses, goals, and tasks with accompanying
+    % completion for all elements.
+    --------------------------------------------------------------------------*/
 	struct Course *body = head;
 	int completed;
 	int total;
@@ -146,7 +168,11 @@ void PrintSummary (Course *head){
 //------------------------------------------------------------------------------
 
 Goal *form_goal(char str[max_name_length], Goal *ghead, int *g){
-	//Split str into 3 variables and form goal object.
+    /*--------------------------------------------------------------------------
+    Create a new Goal, append it to the end of the goal list, and return the
+    head of the list.
+    --------------------------------------------------------------------------*/
+        //Split str into 3 variables and form goal object.
 	char name[max_name_length];
 	char *tmp;
 	int weight;
@@ -154,7 +180,6 @@ Goal *form_goal(char str[max_name_length], Goal *ghead, int *g){
 	struct Goal *body = NULL; 
 	body=(Goal*)calloc(1,sizeof(Goal));
 	tmp = strtok(str, ",");
-	//printf("Goal Name: %s",tmp);
 	strcpy(body->GoalName, tmp);
 	
 	tmp = strtok(NULL, ",");
@@ -180,6 +205,10 @@ Goal *form_goal(char str[max_name_length], Goal *ghead, int *g){
 //------------------------------------------------------------------------------
 
 Node *createNode (char str[max_name_length], Node *nhead){
+    /*--------------------------------------------------------------------------
+    Create node and append it to the end of the list. Return head of the Node 
+    list.
+    --------------------------------------------------------------------------*/
     struct Node *n;
     n =(Node*)calloc(1,sizeof(Node));
     strcpy(n->str, str);
@@ -199,6 +228,10 @@ Node *createNode (char str[max_name_length], Node *nhead){
 //------------------------------------------------------------------------------
 
 Task *createTaskNode (char str[max_name_length], Task *thead, Goal *gHead, int *t){
+    /*--------------------------------------------------------------------------
+    Create a new task node, append it  to the end of the task list, and return
+    the head of the list.
+    --------------------------------------------------------------------------*/
     struct Task *n;
     n =(Task*)calloc(1,sizeof(Task));
     strncpy(n->TaskName, str, strlen(str) - 1);
@@ -220,6 +253,10 @@ Task *createTaskNode (char str[max_name_length], Task *thead, Goal *gHead, int *
 //------------------------------------------------------------------------------
 
 Course *createCourseNode (char str[max_name_length], Course *head, Task *tHead){
+    /*--------------------------------------------------------------------------
+    Create course node, append it to the end of the course list, and return the 
+    head of the course list.
+    --------------------------------------------------------------------------*/
     struct Course *n;
     n =(Course*)calloc(1,sizeof(Course));
     strncpy(n->name, str, strlen(str) - 1);
@@ -240,6 +277,9 @@ Course *createCourseNode (char str[max_name_length], Course *head, Task *tHead){
 //------------------------------------------------------------------------------
 
 Node *ExtractData(){
+    /*--------------------------------------------------------------------------
+    Pull all data from plan.txt to prepare for hierarchy sorting.
+    --------------------------------------------------------------------------*/
     char str[max_name_length];
     struct Node *nhead = NULL;
     FILE *path;
@@ -291,6 +331,10 @@ int main(){
 
     nhead = ExtractData();
     
+    /*--------------------------------------------------------------------------
+    The following section sorts all data extracted from plan.txt into the
+    hierarchal structure this program uses.
+    --------------------------------------------------------------------------*/
     strcpy(head->name,"NULL");
 	// This loop hopefully initializes the three tiered linked list correctly.
 	while (nhead != NULL){
@@ -321,10 +365,20 @@ int main(){
 	head = createCourseNode(course_name, head, tHead);
 	
 	/*--------------------------------------------------------------------------
-	This section actually does stuff with the data. PrintSummary is here as a
-	start.
+	This section actually does stuff with the data. As it was the last function
+	to be implemented, a test to confirm AppendGoal works properly is included.
 	--------------------------------------------------------------------------*/
-	//Prints the current plan alongside all % completions of each course/task/goal
+	//Prepare variables to test appending function
+	g = 0;
+	char r[max_name_length];
+	strcpy(r,"G:Edit,1,1\n");
+	struct Goal *new_goal = NULL;
+	new_goal=(Goal*)calloc(1,sizeof(Goal));
+	//Initialize new goal for appending
+	new_goal = form_goal(r, NULL, &g);
+	//Append goal
+	AppendGoal(head->head, new_goal);
+	//Check goal was appended properly
 	PrintSummary(head);
 	
 	return 0;
